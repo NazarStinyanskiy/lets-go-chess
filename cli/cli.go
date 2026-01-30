@@ -34,7 +34,7 @@ func StartGame() {
 		if moveErr == nil {
 			isWhiteMove = !isWhiteMove
 		} else {
-			fmt.Println(moveErr)
+			fmt.Print("\033[31m", moveErr, "\033[0m\n")
 		}
 	}
 }

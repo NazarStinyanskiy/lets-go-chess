@@ -116,10 +116,7 @@ func (b Bishop) move(from, to Position, board *Board) (ok bool) {
 	if math.Abs(float64(deltaX)) == math.Abs(float64(deltaY)) {
 		x := from.X
 		y := from.Y
-		for x != to.X && y != to.Y {
-			if board.Cells[Position{X: x, Y: y}] != nil {
-				return false
-			}
+		for {
 			if to.X > from.X {
 				x++
 			} else {
@@ -130,9 +127,15 @@ func (b Bishop) move(from, to Position, board *Board) (ok bool) {
 			} else {
 				y--
 			}
-		}
-		if isFightingEnemy || toIsEmpty {
-			return true
+			if x == to.X && y == to.Y {
+				if isFightingEnemy || toIsEmpty {
+					return true
+				}
+				return false
+			}
+			if board.Cells[Position{X: x, Y: y}] != nil {
+				return false
+			}
 		}
 	}
 	return false
