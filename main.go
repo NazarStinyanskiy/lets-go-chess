@@ -1,7 +1,7 @@
 package main
 
 import (
-	"lets-go-chess/cli_ui"
+	"lets-go-chess/cli"
 	"lets-go-chess/game"
 )
 
@@ -13,6 +13,6 @@ func main() {
 func chooseMode(mode int) {
 	switch mode {
 	case 0:
-		cli_ui.StartGame()
+		cli.StartGame()
 	}
 }

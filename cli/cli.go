@@ -1,4 +1,4 @@
-package cli_ui
+package cli
 
 import (
 	"fmt"
@@ -8,21 +8,23 @@ import (
 func StartGame() {
 	playerWhite := game.Player{IsWhite: true}
 	playerBlack := game.Player{IsWhite: false}
-	var from string
-	var to string
+	var move string
 	isWhiteMove := true
 	for {
 		drawBoard(game.Field)
-		fmt.Print("Enter your 'from' move: ")
-		fmt.Scan(&from)
-		fmt.Print("Enter your 'to' move: ")
-		fmt.Scan(&to)
-		fromRunes := []rune(from)
-		fromY := fromRunes[0] - 96
-		fromX := fromRunes[1] - 48
-		toRunes := []byte(to)
-		toY := toRunes[0] - 96
-		toX := toRunes[1] - 48
+		fmt.Print("Enter your move: ")
+		fmt.Scan(&move)
+
+		if move == "exit" {
+			break
+		}
+
+		runes := []rune(move)
+		fromY := runes[0] - 96
+		fromX := runes[1] - 48
+		toY := runes[2] - 96
+		toX := runes[3] - 48
+
 		var moveErr error
 		if isWhiteMove {
 			moveErr = game.Move(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)}, &playerWhite)
