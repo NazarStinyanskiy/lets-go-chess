@@ -1,11 +1,43 @@
-package ui
+package cli_ui
 
 import (
 	"fmt"
 	"lets-go-chess/game"
 )
 
-func DrawBoard(field game.Board) {
+func StartGame() {
+	playerWhite := game.Player{IsWhite: true}
+	playerBlack := game.Player{IsWhite: false}
+	var from string
+	var to string
+	isWhiteMove := true
+	for {
+		drawBoard(game.Field)
+		fmt.Print("Enter your 'from' move: ")
+		fmt.Scan(&from)
+		fmt.Print("Enter your 'to' move: ")
+		fmt.Scan(&to)
+		fromRunes := []rune(from)
+		fromY := fromRunes[0] - 96
+		fromX := fromRunes[1] - 48
+		toRunes := []byte(to)
+		toY := toRunes[0] - 96
+		toX := toRunes[1] - 48
+		var moveErr error
+		if isWhiteMove {
+			moveErr = game.Move(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)}, &playerWhite)
+		} else {
+			moveErr = game.Move(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)}, &playerBlack)
+		}
+		if moveErr == nil {
+			isWhiteMove = !isWhiteMove
+		} else {
+			fmt.Println(moveErr)
+		}
+	}
+}
+
+func drawBoard(field game.Board) {
 	for y := 0; y <= 8; y++ {
 		for x := 0; x <= 8; x++ {
 			if x == 0 || y == 0 {
@@ -57,7 +89,7 @@ func drawBlackFigure(t string) {
 	case "game.Knight":
 		fmt.Print(" \u2658 ")
 	case "game.Bishop":
-		fmt.Print(" \u2654 ")
+		fmt.Print(" \u2657 ")
 	case "game.Queen":
 		fmt.Print(" \u2655 ")
 	case "game.King":

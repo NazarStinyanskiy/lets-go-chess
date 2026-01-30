@@ -1,6 +1,15 @@
 package game
 
+import "errors"
+
 var Field Board
+
+var (
+	InvalidFrom        = errors.New("Invalid from")
+	ToOutOfBounds      = errors.New("To out of bounds")
+	MoveRulesViolation = errors.New("Move rules violation")
+	WrongColor         = errors.New("Wrong color")
+)
 
 func CreateField() {
 	Field = Board{make(map[Position]*Figure)}
@@ -13,6 +22,22 @@ func CreateField() {
 			}
 		}
 	}
+}
+
+func Move(from, to Position, player *Player) error {
+	if Field.Cells[from] == nil {
+		return InvalidFrom
+	}
+	if player.IsWhite != Field.Cells[from].IsWhite {
+		return WrongColor
+	}
+	if to.X > 8 || to.X < 1 || to.Y > 8 || to.Y < 1 {
+		return ToOutOfBounds
+	}
+	if !Field.Cells[from].move(from, to, &Field) {
+		return MoveRulesViolation
+	}
+	return nil
 }
 
 func createFigure(x, y int, isWhite bool) {

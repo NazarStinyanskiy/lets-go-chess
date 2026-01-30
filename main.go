@@ -1,11 +1,18 @@
 package main
 
 import (
+	"lets-go-chess/cli_ui"
 	"lets-go-chess/game"
-	"lets-go-chess/ui"
 )
 
 func main() {
 	game.CreateField()
-	ui.DrawBoard(game.Field)
+	chooseMode(0)
+}
+
+func chooseMode(mode int) {
+	switch mode {
+	case 0:
+		cli_ui.StartGame()
+	}
 }
