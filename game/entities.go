@@ -1,5 +1,7 @@
 package game
 
+import "math"
+
 type Position struct {
 	X int
 	Y int
@@ -44,7 +46,46 @@ func (q Queen) move(from, to Position, board *Board) bool {
 
 type Rook struct{}
 
-func (r Rook) move(from, to Position, board *Board) bool {
+func (r Rook) move(from, to Position, board *Board) (ok bool) {
+	defer func() {
+		if ok {
+			Field.Cells[to] = Field.Cells[from]
+			Field.Cells[from] = nil
+		}
+	}()
+	isFightingEnemy := board.Cells[to] != nil && board.Cells[to].IsWhite != board.Cells[from].IsWhite
+	deltaX := to.X - from.X
+	deltaY := to.Y - from.Y
+
+	if deltaX != 0 && deltaY != 0 {
+		return false
+	}
+	if deltaX != 0 {
+		minX := int(math.Min(float64(from.X), float64(to.X))) + 1
+		maxX := int(math.Max(float64(from.X), float64(to.X)))
+		encounter := false
+		for x := minX; x < maxX; x++ {
+			if board.Cells[Position{X: x, Y: from.Y}] != nil {
+				encounter = true
+			}
+		}
+		if !encounter && (isFightingEnemy || board.Cells[to] == nil) {
+			return true
+		}
+	}
+	if deltaY != 0 {
+		minY := int(math.Min(float64(from.Y), float64(to.Y))) + 1
+		maxY := int(math.Max(float64(from.Y), float64(to.Y)))
+		encounter := false
+		for y := minY; y < maxY; y++ {
+			if board.Cells[Position{X: from.X, Y: y}] != nil {
+				encounter = true
+			}
+		}
+		if !encounter && (isFightingEnemy || board.Cells[to] == nil) {
+			return true
+		}
+	}
 	return false
 }
 
@@ -56,7 +97,26 @@ func (b Bishop) move(from, to Position, board *Board) bool {
 
 type Knight struct{}
 
-func (k Knight) move(from, to Position, board *Board) bool {
+func (k Knight) move(from, to Position, board *Board) (ok bool) {
+	defer func() {
+		if ok {
+			Field.Cells[to] = Field.Cells[from]
+			Field.Cells[from] = nil
+		}
+	}()
+	toIsEmpty := board.Cells[to] == nil
+	isFightingEnemy := board.Cells[to] != nil && board.Cells[to].IsWhite != board.Cells[from].IsWhite
+	deltaX := to.X - from.X
+	deltaY := to.Y - from.Y
+
+	if isFightingEnemy || toIsEmpty {
+		if (deltaX == 2 || deltaX == -2) && (deltaY == 1 || deltaY == -1) {
+			return true
+		}
+		if (deltaY == 2 || deltaY == -2) && (deltaX == 1 || deltaX == -1) {
+			return true
+		}
+	}
 	return false
 }
 
