@@ -42,38 +42,44 @@ func Move(from, to Position, player *Player) error {
 
 func createFigure(x, y int, isWhite bool) {
 	f := &Figure{IsWhite: isWhite}
+	pawn := Pawn{}
+	rook := Rook{}
+	knight := Knight{}
+	bishop := Bishop{}
+	queen := Queen{bishop: bishop, rook: rook}
+	king := King{}
 	if y == 2 || y == 7 {
-		f.Mover = Pawn{}
+		f.Mover = pawn
 		Field.Cells[Position{x, y}] = f
 		return
 	}
 
 	if (x == 1 || x == 8) && (y == 1 || y == 8) {
-		f.Mover = Rook{}
+		f.Mover = rook
 		Field.Cells[Position{x, y}] = f
 		return
 	}
 
 	if (x == 2 || x == 7) && (y == 1 || y == 8) {
-		f.Mover = Knight{}
+		f.Mover = knight
 		Field.Cells[Position{x, y}] = f
 		return
 	}
 
 	if (x == 3 || x == 6) && (y == 1 || y == 8) {
-		f.Mover = Bishop{}
+		f.Mover = bishop
 		Field.Cells[Position{x, y}] = f
 		return
 	}
 
 	if x == 4 && (y == 1 || y == 8) {
-		f.Mover = Queen{}
+		f.Mover = queen
 		Field.Cells[Position{x, y}] = f
 		return
 	}
 
 	if x == 5 && (y == 1 || y == 8) {
-		f.Mover = King{}
+		f.Mover = king
 		Field.Cells[Position{x, y}] = f
 		return
 	}

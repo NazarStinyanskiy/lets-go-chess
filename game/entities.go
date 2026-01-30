@@ -26,22 +26,33 @@ type Board struct {
 type King struct{}
 
 func (k King) move(from, to Position, board *Board) bool {
-	if to.X != from.X || to.X != from.X+1 || to.X != from.X-1 && to.Y != from.Y || to.Y != from.Y+1 || to.Y != from.Y-1 {
-		return false
+	toIsEmpty := board.Cells[to] == nil
+	isFightingEnemy := board.Cells[to] != nil && board.Cells[to].IsWhite != board.Cells[from].IsWhite
+	deltaX := to.X - from.X
+	deltaY := to.Y - from.Y
+
+	if deltaX <= 1 && deltaX >= -1 || deltaY <= 1 && deltaY >= -1 {
+		if isFightingEnemy || toIsEmpty {
+			Field.Cells[to] = Field.Cells[from]
+			Field.Cells[from] = nil
+			return true
+		}
 	}
+
 	if board.Cells[from].IsWhite == board.Cells[to].IsWhite {
 		//TODO: castling
 		return false
 	}
-	Field.Cells[to] = Field.Cells[from]
-	Field.Cells[from] = nil
-	return true
+	return false
 }
 
-type Queen struct{}
+type Queen struct {
+	bishop Bishop
+	rook   Rook
+}
 
 func (q Queen) move(from, to Position, board *Board) bool {
-	return false
+	return q.bishop.move(from, to, board) || q.rook.move(from, to, board)
 }
 
 type Rook struct{}
@@ -53,6 +64,7 @@ func (r Rook) move(from, to Position, board *Board) (ok bool) {
 			Field.Cells[from] = nil
 		}
 	}()
+	toIsEmpty := board.Cells[to] == nil
 	isFightingEnemy := board.Cells[to] != nil && board.Cells[to].IsWhite != board.Cells[from].IsWhite
 	deltaX := to.X - from.X
 	deltaY := to.Y - from.Y
@@ -63,26 +75,24 @@ func (r Rook) move(from, to Position, board *Board) (ok bool) {
 	if deltaX != 0 {
 		minX := int(math.Min(float64(from.X), float64(to.X))) + 1
 		maxX := int(math.Max(float64(from.X), float64(to.X)))
-		encounter := false
 		for x := minX; x < maxX; x++ {
 			if board.Cells[Position{X: x, Y: from.Y}] != nil {
-				encounter = true
+				return false
 			}
 		}
-		if !encounter && (isFightingEnemy || board.Cells[to] == nil) {
+		if isFightingEnemy || toIsEmpty {
 			return true
 		}
 	}
 	if deltaY != 0 {
 		minY := int(math.Min(float64(from.Y), float64(to.Y))) + 1
 		maxY := int(math.Max(float64(from.Y), float64(to.Y)))
-		encounter := false
 		for y := minY; y < maxY; y++ {
 			if board.Cells[Position{X: from.X, Y: y}] != nil {
-				encounter = true
+				return false
 			}
 		}
-		if !encounter && (isFightingEnemy || board.Cells[to] == nil) {
+		if isFightingEnemy || toIsEmpty {
 			return true
 		}
 	}
@@ -91,7 +101,40 @@ func (r Rook) move(from, to Position, board *Board) (ok bool) {
 
 type Bishop struct{}
 
-func (b Bishop) move(from, to Position, board *Board) bool {
+func (b Bishop) move(from, to Position, board *Board) (ok bool) {
+	defer func() {
+		if ok {
+			Field.Cells[to] = Field.Cells[from]
+			Field.Cells[from] = nil
+		}
+	}()
+	toIsEmpty := board.Cells[to] == nil
+	isFightingEnemy := board.Cells[to] != nil && board.Cells[to].IsWhite != board.Cells[from].IsWhite
+	deltaX := to.X - from.X
+	deltaY := to.Y - from.Y
+
+	if math.Abs(float64(deltaX)) == math.Abs(float64(deltaY)) {
+		x := from.X
+		y := from.Y
+		for x != to.X && y != to.Y {
+			if board.Cells[Position{X: x, Y: y}] != nil {
+				return false
+			}
+			if to.X > from.X {
+				x++
+			} else {
+				x--
+			}
+			if to.Y > from.Y {
+				y++
+			} else {
+				y--
+			}
+		}
+		if isFightingEnemy || toIsEmpty {
+			return true
+		}
+	}
 	return false
 }
 
