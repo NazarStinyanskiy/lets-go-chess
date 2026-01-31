@@ -2,6 +2,19 @@ package game
 
 import "errors"
 
+type Player struct {
+	IsWhite bool
+}
+
+type Position struct {
+	X int
+	Y int
+}
+
+type Board struct {
+	Cells map[Position]*Figure
+}
+
 var Field Board
 
 var (
@@ -34,7 +47,7 @@ func Move(from, to Position, player *Player) error {
 	if to.X > 8 || to.X < 1 || to.Y > 8 || to.Y < 1 {
 		return ToOutOfBounds
 	}
-	if !Field.Cells[from].move(from, to, &Field) {
+	if !Field.Cells[from].move(from, to) {
 		return MoveRulesViolation
 	}
 	return nil
