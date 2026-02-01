@@ -16,6 +16,8 @@ type Board struct {
 }
 
 var Field Board
+var enPassantWhite *Figure
+var enPassantBlack *Figure
 
 var (
 	InvalidFrom        = errors.New("Invalid from")
@@ -38,18 +40,29 @@ func CreateField() {
 }
 
 func Move(from, to Position, player *Player) error {
-	if Field.Cells[from] == nil {
+	figure := Field.Cells[from]
+	if figure == nil {
 		return InvalidFrom
 	}
-	if player.IsWhite != Field.Cells[from].IsWhite {
+	if player.IsWhite != figure.IsWhite {
 		return WrongColor
 	}
 	if to.X > 8 || to.X < 1 || to.Y > 8 || to.Y < 1 {
 		return ToOutOfBounds
 	}
-	if !Field.Cells[from].move(from, to) {
+	if player.IsWhite && enPassantWhite != nil {
+		enPassantWhite.IsVulnerableForEnPassant = false
+		enPassantWhite = nil
+	}
+	if !player.IsWhite && enPassantBlack != nil {
+		enPassantBlack.IsVulnerableForEnPassant = false
+		enPassantBlack = nil
+	}
+	canMove, specialMove := figure.canMove(from, to)
+	if !canMove {
 		return MoveRulesViolation
 	}
+	figure.move(from, to, specialMove)
 	return nil
 }
 
