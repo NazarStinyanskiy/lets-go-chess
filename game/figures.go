@@ -9,41 +9,41 @@ type Figure struct {
 	Mover
 }
 
-type SpecialMove int
+type MoveDetails int
 
 const (
-	None SpecialMove = iota
+	None MoveDetails = iota
 	EnPassant
 	ShortCastling
 	LongCastling
 )
 
 type Mover interface {
-	canMove(from, to Position) (bool, SpecialMove)
-	move(from, to Position, move SpecialMove)
+	canMove(from, to Position) (bool, MoveDetails)
+	move(from, to Position, move MoveDetails)
 }
 
 type King struct{}
 
-func (k King) canMove(from, to Position) (ok bool, move SpecialMove) {
+func (k King) canMove(from, to Position) (ok bool, move MoveDetails) {
 	figure := Field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
 	if deltaX <= 1 && deltaX >= -1 && deltaY <= 1 && deltaY >= -1 {
-		if (isFightingEnemy(from, to) || isCellEmpty(to)) && !isFigureInThreat(to) {
+		if (isFightingEnemy(from, to) || isCellEmpty(to)) && !isFigureInThreatAfterMove(from, to) {
 			return true, None
 		}
 	}
 	if figure.IsWhite {
 		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 8, Y: 1}].HasMoved {
 			if Field.Cells[Position{X: 6, Y: 1}] == nil && Field.Cells[Position{X: 7, Y: 1}] == nil {
-				if !isFigureInThreat(Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreat(to) {
+				if !isFigureInThreatAfterMove(from, Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
 					return true, ShortCastling
 				}
 			}
 		}
 		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 1, Y: 1}].HasMoved {
 			if Field.Cells[Position{X: 4, Y: 1}] == nil && Field.Cells[Position{X: 3, Y: 1}] == nil && Field.Cells[Position{X: 2, Y: 1}] == nil {
-				if !isFigureInThreat(Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreat(to) {
+				if !isFigureInThreatAfterMove(from, Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
 					return true, LongCastling
 				}
 			}
@@ -51,14 +51,14 @@ func (k King) canMove(from, to Position) (ok bool, move SpecialMove) {
 	} else {
 		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 8, Y: 8}].HasMoved {
 			if Field.Cells[Position{X: 6, Y: 8}] == nil && Field.Cells[Position{X: 7, Y: 8}] == nil {
-				if !isFigureInThreat(Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreat(to) {
+				if !isFigureInThreatAfterMove(from, Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
 					return true, ShortCastling
 				}
 			}
 		}
 		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 1, Y: 8}].HasMoved {
 			if Field.Cells[Position{X: 4, Y: 8}] == nil && Field.Cells[Position{X: 3, Y: 8}] == nil && Field.Cells[Position{X: 2, Y: 8}] == nil {
-				if !isFigureInThreat(Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreat(to) {
+				if !isFigureInThreatAfterMove(from, Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
 					return true, LongCastling
 				}
 			}
@@ -67,7 +67,7 @@ func (k King) canMove(from, to Position) (ok bool, move SpecialMove) {
 	return false, None
 }
 
-func (k King) move(from, to Position, move SpecialMove) {
+func (k King) move(from, to Position, move MoveDetails) {
 	figure := Field.Cells[from]
 	figure.HasMoved = true
 	replace(from, to)
@@ -96,19 +96,19 @@ type Queen struct {
 	rook   Rook
 }
 
-func (q Queen) canMove(from, to Position) (bool, SpecialMove) {
+func (q Queen) canMove(from, to Position) (bool, MoveDetails) {
 	bishopOk, _ := q.bishop.canMove(from, to)
 	rookOk, _ := q.rook.canMove(from, to)
 	return bishopOk || rookOk, None
 }
 
-func (q Queen) move(from, to Position, move SpecialMove) {
+func (q Queen) move(from, to Position, move MoveDetails) {
 	replace(from, to)
 }
 
 type Rook struct{}
 
-func (r Rook) canMove(from, to Position) (ok bool, move SpecialMove) {
+func (r Rook) canMove(from, to Position) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 
 	if deltaX != 0 && deltaY != 0 {
@@ -141,14 +141,14 @@ func (r Rook) canMove(from, to Position) (ok bool, move SpecialMove) {
 	return false, None
 }
 
-func (r Rook) move(from, to Position, move SpecialMove) {
+func (r Rook) move(from, to Position, move MoveDetails) {
 	Field.Cells[from].HasMoved = true
 	replace(from, to)
 }
 
 type Bishop struct{}
 
-func (b Bishop) canMove(from, to Position) (ok bool, move SpecialMove) {
+func (b Bishop) canMove(from, to Position) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 	if math.Abs(float64(deltaX)) == math.Abs(float64(deltaY)) {
 		x := from.X
@@ -178,13 +178,13 @@ func (b Bishop) canMove(from, to Position) (ok bool, move SpecialMove) {
 	return false, None
 }
 
-func (b Bishop) move(from, to Position, move SpecialMove) {
+func (b Bishop) move(from, to Position, move MoveDetails) {
 	replace(from, to)
 }
 
 type Knight struct{}
 
-func (k Knight) canMove(from, to Position) (ok bool, move SpecialMove) {
+func (k Knight) canMove(from, to Position) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 	if isFightingEnemy(from, to) || isCellEmpty(to) {
 		if (deltaX == 2 || deltaX == -2) && (deltaY == 1 || deltaY == -1) {
@@ -197,13 +197,13 @@ func (k Knight) canMove(from, to Position) (ok bool, move SpecialMove) {
 	return false, None
 }
 
-func (k Knight) move(from, to Position, move SpecialMove) {
+func (k Knight) move(from, to Position, move MoveDetails) {
 	replace(from, to)
 }
 
 type Pawn struct{}
 
-func (p Pawn) canMove(from, to Position) (ok bool, move SpecialMove) {
+func (p Pawn) canMove(from, to Position) (ok bool, move MoveDetails) {
 	figure := Field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
 	if figure.IsWhite {
@@ -242,7 +242,7 @@ func (p Pawn) canMove(from, to Position) (ok bool, move SpecialMove) {
 	return false, None
 }
 
-func (p Pawn) move(from, to Position, move SpecialMove) {
+func (p Pawn) move(from, to Position, move MoveDetails) {
 	figure := Field.Cells[from]
 	figure.HasMoved = true
 	replace(from, to)
@@ -272,9 +272,8 @@ func getDelta(from, to Position) (x int, y int) {
 	return to.X - from.X, to.Y - from.Y
 }
 
-// TODO: fix recursion-stackoverflow. Implement check-mate
-func isFigureInThreat(pos Position) bool {
-	for figurePos, figure := range Field.Cells {
+func isFigureInThreatNow(pos Position, cells map[Position]*Figure) bool {
+	for figurePos, figure := range cells {
 		if figure == nil || figurePos == pos {
 			continue
 		}
@@ -284,4 +283,14 @@ func isFigureInThreat(pos Position) bool {
 		}
 	}
 	return false
+}
+
+func isFigureInThreatAfterMove(from, to Position) bool {
+	var futureField = make(map[Position]*Figure, len(Field.Cells))
+	for figurePos, figure := range Field.Cells {
+		futureField[figurePos] = figure
+	}
+	futureField[to] = futureField[from]
+	futureField[from] = nil
+	return isFigureInThreatNow(to, futureField)
 }
