@@ -6,10 +6,9 @@ import (
 )
 
 func StartGame() {
-	playerWhite := game.Player{IsWhite: true}
-	playerBlack := game.Player{IsWhite: false}
+	game.PlayerWhite = &game.Player{IsWhite: true, Situation: game.Continue}
+	game.PlayerBlack = &game.Player{IsWhite: false, Situation: game.Continue}
 	var move string
-	isWhiteMove := true
 	for {
 		drawBoard(game.Field)
 		fmt.Print("Enter your move: ")
@@ -25,16 +24,23 @@ func StartGame() {
 		toY := runes[2] - 96
 		toX := runes[3] - 48
 
-		var moveErr error
-		if isWhiteMove {
-			moveErr = game.Move(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)}, &playerWhite)
-		} else {
-			moveErr = game.Move(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)}, &playerBlack)
-		}
-		if moveErr == nil {
-			isWhiteMove = !isWhiteMove
-		} else {
+		situation, moveErr := game.NextMove(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)})
+		if moveErr != nil {
 			fmt.Print("\033[31m", moveErr, "\033[0m\n")
+			continue
+		}
+		switch situation {
+		case game.Continue:
+			continue
+		case game.Check:
+			fmt.Println("Check!")
+			continue
+		case game.Checkmate:
+			fmt.Print("Checkmate!")
+			break
+		case game.Stalemate:
+			fmt.Print("Stalemate!")
+			break
 		}
 	}
 }
