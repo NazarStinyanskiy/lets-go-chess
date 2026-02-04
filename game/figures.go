@@ -2,6 +2,30 @@ package game
 
 import "math"
 
+type MoveDetails int
+
+const (
+	None MoveDetails = iota
+	ReadyForEnPassant
+	EnPassant
+	ShortCastling
+	LongCastling
+)
+
+type Situation int
+
+const (
+	Continue Situation = iota
+	Check
+	Checkmate
+	Stalemate
+)
+
+type Position struct {
+	X int
+	Y int
+}
+
 type Figure struct {
 	IsWhite                  bool
 	HasMoved                 bool
@@ -9,56 +33,58 @@ type Figure struct {
 	Mover
 }
 
-type MoveDetails int
-
-const (
-	None MoveDetails = iota
-	EnPassant
-	ShortCastling
-	LongCastling
-)
-
 type Mover interface {
-	canMove(from, to Position) (bool, MoveDetails)
-	move(from, to Position, move MoveDetails)
+	canMove(field Board, from, to Position, situation Situation) (bool, MoveDetails)
+	move(field Board, from, to Position, move MoveDetails) Board
 }
 
 type King struct{}
 
-func (k King) canMove(from, to Position) (ok bool, move MoveDetails) {
-	figure := Field.Cells[from]
+func (k King) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
+	figure := field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
+	defer func() {
+		if ok && situation == Check {
+			board := k.move(field, from, to, move)
+			kingPos := findKing(field, figure.IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
 	if deltaX <= 1 && deltaX >= -1 && deltaY <= 1 && deltaY >= -1 {
-		if (isFightingEnemy(from, to) || isCellEmpty(to)) && !isFigureInThreatAfterMove(from, to) {
+		if (isFightingEnemy(field, from, to) || isCellEmpty(field, to)) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 			return true, None
 		}
 	}
 	if figure.IsWhite {
-		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 8, Y: 1}].HasMoved {
-			if Field.Cells[Position{X: 6, Y: 1}] == nil && Field.Cells[Position{X: 7, Y: 1}] == nil {
-				if !isFigureInThreatAfterMove(from, Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
+		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 8, Y: 1}].HasMoved {
+			if field.Cells[Position{X: 6, Y: 1}] == nil && field.Cells[Position{X: 7, Y: 1}] == nil {
+				prevPos := Position{X: to.X - 1, Y: to.Y}
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 					return true, ShortCastling
 				}
 			}
 		}
-		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 1, Y: 1}].HasMoved {
-			if Field.Cells[Position{X: 4, Y: 1}] == nil && Field.Cells[Position{X: 3, Y: 1}] == nil && Field.Cells[Position{X: 2, Y: 1}] == nil {
-				if !isFigureInThreatAfterMove(from, Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
+		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 1, Y: 1}].HasMoved {
+			if field.Cells[Position{X: 4, Y: 1}] == nil && field.Cells[Position{X: 3, Y: 1}] == nil && field.Cells[Position{X: 2, Y: 1}] == nil {
+				prevPos := Position{X: to.X + 1, Y: to.Y}
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 					return true, LongCastling
 				}
 			}
 		}
 	} else {
-		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 8, Y: 8}].HasMoved {
-			if Field.Cells[Position{X: 6, Y: 8}] == nil && Field.Cells[Position{X: 7, Y: 8}] == nil {
-				if !isFigureInThreatAfterMove(from, Position{X: to.X - 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
+		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 8, Y: 8}].HasMoved {
+			if field.Cells[Position{X: 6, Y: 8}] == nil && field.Cells[Position{X: 7, Y: 8}] == nil {
+				prevPos := Position{X: to.X - 1, Y: to.Y}
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 					return true, ShortCastling
 				}
 			}
 		}
-		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !Field.Cells[Position{X: 1, Y: 8}].HasMoved {
-			if Field.Cells[Position{X: 4, Y: 8}] == nil && Field.Cells[Position{X: 3, Y: 8}] == nil && Field.Cells[Position{X: 2, Y: 8}] == nil {
-				if !isFigureInThreatAfterMove(from, Position{X: to.X + 1, Y: to.Y}) && !isFigureInThreatAfterMove(from, to) {
+		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 1, Y: 8}].HasMoved {
+			if field.Cells[Position{X: 4, Y: 8}] == nil && field.Cells[Position{X: 3, Y: 8}] == nil && field.Cells[Position{X: 2, Y: 8}] == nil {
+				prevPos := Position{X: to.X + 1, Y: to.Y}
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 					return true, LongCastling
 				}
 			}
@@ -67,28 +93,29 @@ func (k King) canMove(from, to Position) (ok bool, move MoveDetails) {
 	return false, None
 }
 
-func (k King) move(from, to Position, move MoveDetails) {
-	figure := Field.Cells[from]
-	figure.HasMoved = true
-	replace(from, to)
+func (k King) move(field Board, from, to Position, move MoveDetails) Board {
+	field = copyField(field)
+	figure := field.Cells[from]
+	replace(&field, from, to)
 	if move == ShortCastling {
 		if figure.IsWhite {
-			Field.Cells[Position{X: 6, Y: 1}] = Field.Cells[Position{X: 8, Y: 1}]
-			Field.Cells[Position{X: 8, Y: 1}] = nil
+			field.Cells[Position{X: 6, Y: 1}] = field.Cells[Position{X: 8, Y: 1}]
+			field.Cells[Position{X: 8, Y: 1}] = nil
 		} else {
-			Field.Cells[Position{X: 6, Y: 8}] = Field.Cells[Position{X: 8, Y: 8}]
-			Field.Cells[Position{X: 8, Y: 8}] = nil
+			field.Cells[Position{X: 6, Y: 8}] = field.Cells[Position{X: 8, Y: 8}]
+			field.Cells[Position{X: 8, Y: 8}] = nil
 		}
 	}
 	if move == LongCastling {
 		if figure.IsWhite {
-			Field.Cells[Position{X: 4, Y: 1}] = Field.Cells[Position{X: 1, Y: 1}]
-			Field.Cells[Position{X: 1, Y: 1}] = nil
+			field.Cells[Position{X: 4, Y: 1}] = field.Cells[Position{X: 1, Y: 1}]
+			field.Cells[Position{X: 1, Y: 1}] = nil
 		} else {
-			Field.Cells[Position{X: 4, Y: 8}] = Field.Cells[Position{X: 1, Y: 8}]
-			Field.Cells[Position{X: 1, Y: 8}] = nil
+			field.Cells[Position{X: 4, Y: 8}] = field.Cells[Position{X: 1, Y: 8}]
+			field.Cells[Position{X: 1, Y: 8}] = nil
 		}
 	}
+	return field
 }
 
 type Queen struct {
@@ -96,21 +123,36 @@ type Queen struct {
 	rook   Rook
 }
 
-func (q Queen) canMove(from, to Position) (bool, MoveDetails) {
-	bishopOk, _ := q.bishop.canMove(from, to)
-	rookOk, _ := q.rook.canMove(from, to)
+func (q Queen) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
+	defer func() {
+		if ok && situation == Check {
+			board := q.move(field, from, to, move)
+			kingPos := findKing(field, field.Cells[from].IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
+	bishopOk, _ := q.bishop.canMove(field, from, to, situation)
+	rookOk, _ := q.rook.canMove(field, from, to, situation)
 	return bishopOk || rookOk, None
 }
 
-func (q Queen) move(from, to Position, move MoveDetails) {
-	replace(from, to)
+func (q Queen) move(field Board, from, to Position, _ MoveDetails) Board {
+	field = copyField(field)
+	replace(&field, from, to)
+	return field
 }
 
 type Rook struct{}
 
-func (r Rook) canMove(from, to Position) (ok bool, move MoveDetails) {
+func (r Rook) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
-
+	defer func() {
+		if ok && situation == Check {
+			board := r.move(field, from, to, move)
+			kingPos := findKing(field, field.Cells[from].IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
 	if deltaX != 0 && deltaY != 0 {
 		return false, None
 	}
@@ -118,11 +160,11 @@ func (r Rook) canMove(from, to Position) (ok bool, move MoveDetails) {
 		minX := int(math.Min(float64(from.X), float64(to.X))) + 1
 		maxX := int(math.Max(float64(from.X), float64(to.X)))
 		for x := minX; x < maxX; x++ {
-			if Field.Cells[Position{X: x, Y: from.Y}] != nil {
+			if field.Cells[Position{X: x, Y: from.Y}] != nil {
 				return false, None
 			}
 		}
-		if isFightingEnemy(from, to) || isCellEmpty(to) {
+		if isFightingEnemy(field, from, to) || isCellEmpty(field, to) {
 			return true, None
 		}
 	}
@@ -130,26 +172,34 @@ func (r Rook) canMove(from, to Position) (ok bool, move MoveDetails) {
 		minY := int(math.Min(float64(from.Y), float64(to.Y))) + 1
 		maxY := int(math.Max(float64(from.Y), float64(to.Y)))
 		for y := minY; y < maxY; y++ {
-			if Field.Cells[Position{X: from.X, Y: y}] != nil {
+			if field.Cells[Position{X: from.X, Y: y}] != nil {
 				return false, None
 			}
 		}
-		if isFightingEnemy(from, to) || isCellEmpty(to) {
+		if isFightingEnemy(field, from, to) || isCellEmpty(field, to) {
 			return true, None
 		}
 	}
 	return false, None
 }
 
-func (r Rook) move(from, to Position, move MoveDetails) {
-	Field.Cells[from].HasMoved = true
-	replace(from, to)
+func (r Rook) move(field Board, from, to Position, _ MoveDetails) Board {
+	field = copyField(field)
+	replace(&field, from, to)
+	return field
 }
 
 type Bishop struct{}
 
-func (b Bishop) canMove(from, to Position) (ok bool, move MoveDetails) {
+func (b Bishop) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
+	defer func() {
+		if ok && situation == Check {
+			board := b.move(field, from, to, move)
+			kingPos := findKing(field, field.Cells[from].IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
 	if math.Abs(float64(deltaX)) == math.Abs(float64(deltaY)) {
 		x := from.X
 		y := from.Y
@@ -165,12 +215,12 @@ func (b Bishop) canMove(from, to Position) (ok bool, move MoveDetails) {
 				y--
 			}
 			if x == to.X && y == to.Y {
-				if isFightingEnemy(from, to) || isCellEmpty(to) {
+				if isFightingEnemy(field, from, to) || isCellEmpty(field, to) {
 					return true, None
 				}
 				return false, None
 			}
-			if Field.Cells[Position{X: x, Y: y}] != nil {
+			if field.Cells[Position{X: x, Y: y}] != nil {
 				return false, None
 			}
 		}
@@ -178,15 +228,24 @@ func (b Bishop) canMove(from, to Position) (ok bool, move MoveDetails) {
 	return false, None
 }
 
-func (b Bishop) move(from, to Position, move MoveDetails) {
-	replace(from, to)
+func (b Bishop) move(field Board, from, to Position, _ MoveDetails) Board {
+	field = copyField(field)
+	replace(&field, from, to)
+	return field
 }
 
 type Knight struct{}
 
-func (k Knight) canMove(from, to Position) (ok bool, move MoveDetails) {
+func (k Knight) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
-	if isFightingEnemy(from, to) || isCellEmpty(to) {
+	defer func() {
+		if ok && situation == Check {
+			board := k.move(field, from, to, move)
+			kingPos := findKing(field, field.Cells[from].IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
+	if isFightingEnemy(field, from, to) || isCellEmpty(field, to) {
 		if (deltaX == 2 || deltaX == -2) && (deltaY == 1 || deltaY == -1) {
 			return true, None
 		}
@@ -197,44 +256,49 @@ func (k Knight) canMove(from, to Position) (ok bool, move MoveDetails) {
 	return false, None
 }
 
-func (k Knight) move(from, to Position, move MoveDetails) {
-	replace(from, to)
+func (k Knight) move(field Board, from, to Position, _ MoveDetails) Board {
+	field = copyField(field)
+	replace(&field, from, to)
+	return field
 }
 
 type Pawn struct{}
 
-func (p Pawn) canMove(from, to Position) (ok bool, move MoveDetails) {
-	figure := Field.Cells[from]
+func (p Pawn) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
+	figure := field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
+	defer func() {
+		if ok && situation == Check {
+			board := p.move(field, from, to, move)
+			kingPos := findKing(field, figure.IsWhite)
+			ok = !isFigureInThreat(board, kingPos, situation)
+		}
+	}()
 	if figure.IsWhite {
-		if deltaY == 1 && deltaX == 0 && isCellEmpty(to) {
+		if deltaY == 1 && deltaX == 0 && isCellEmpty(field, to) {
 			return true, None
 		}
-		if (deltaX == 1 || deltaX == -1) && deltaY == 1 && isFightingEnemy(from, to) {
+		if (deltaX == 1 || deltaX == -1) && deltaY == 1 && isFightingEnemy(field, from, to) {
 			return true, None
 		}
-		if (!figure.HasMoved && deltaY == 2 && deltaX == 0 && isCellEmpty(to) && Field.Cells[Position{to.X, to.Y - 1}] == nil) {
-			figure.IsVulnerableForEnPassant = true
-			enPassantWhite = figure
-			return true, None
+		if (!figure.HasMoved && deltaY == 2 && deltaX == 0 && isCellEmpty(field, to) && field.Cells[Position{to.X, to.Y - 1}] == nil) {
+			return true, ReadyForEnPassant
 		}
-		enPassantEnemy := Field.Cells[Position{to.X, to.Y - 1}]
+		enPassantEnemy := field.Cells[Position{to.X, to.Y - 1}]
 		if math.Abs(float64(deltaX)) == 1 && deltaY == 1 && enPassantEnemy != nil && !enPassantEnemy.IsWhite && enPassantEnemy.IsVulnerableForEnPassant {
 			return true, EnPassant
 		}
 	} else {
-		if deltaY == -1 && deltaX == 0 && isCellEmpty(to) {
+		if deltaY == -1 && deltaX == 0 && isCellEmpty(field, to) {
 			return true, None
 		}
-		if (deltaX == 1 || deltaX == -1) && deltaY == -1 && isFightingEnemy(from, to) {
+		if (deltaX == 1 || deltaX == -1) && deltaY == -1 && isFightingEnemy(field, from, to) {
 			return true, None
 		}
-		if (!figure.HasMoved && deltaY == -2 && deltaX == 0 && isCellEmpty(to) && Field.Cells[Position{to.X, to.Y + 1}] == nil) {
-			figure.IsVulnerableForEnPassant = true
-			enPassantBlack = figure
-			return true, None
+		if (!figure.HasMoved && deltaY == -2 && deltaX == 0 && isCellEmpty(field, to) && field.Cells[Position{to.X, to.Y + 1}] == nil) {
+			return true, ReadyForEnPassant
 		}
-		enPassantEnemy := Field.Cells[Position{to.X, to.Y + 1}]
+		enPassantEnemy := field.Cells[Position{to.X, to.Y + 1}]
 		if math.Abs(float64(deltaX)) == 1 && deltaY == -1 && enPassantEnemy != nil && enPassantEnemy.IsWhite && enPassantEnemy.IsVulnerableForEnPassant {
 			return true, EnPassant
 		}
@@ -242,55 +306,16 @@ func (p Pawn) canMove(from, to Position) (ok bool, move MoveDetails) {
 	return false, None
 }
 
-func (p Pawn) move(from, to Position, move MoveDetails) {
-	figure := Field.Cells[from]
-	figure.HasMoved = true
-	replace(from, to)
+func (p Pawn) move(field Board, from, to Position, move MoveDetails) Board {
+	field = copyField(field)
+	figure := field.Cells[from]
+	replace(&field, from, to)
 	if move == EnPassant {
 		if figure.IsWhite {
-			Field.Cells[Position{X: to.X, Y: to.Y - 1}] = nil
+			field.Cells[Position{X: to.X, Y: to.Y - 1}] = nil
 		} else {
-			Field.Cells[Position{X: to.X, Y: to.Y + 1}] = nil
+			field.Cells[Position{X: to.X, Y: to.Y + 1}] = nil
 		}
 	}
-}
-
-func replace(from, to Position) {
-	Field.Cells[to] = Field.Cells[from]
-	Field.Cells[from] = nil
-}
-
-func isCellEmpty(pos Position) bool {
-	return Field.Cells[pos] == nil
-}
-
-func isFightingEnemy(from, to Position) bool {
-	return Field.Cells[to] != nil && Field.Cells[to].IsWhite != Field.Cells[from].IsWhite
-}
-
-func getDelta(from, to Position) (x int, y int) {
-	return to.X - from.X, to.Y - from.Y
-}
-
-func isFigureInThreatNow(pos Position, cells map[Position]*Figure) bool {
-	for figurePos, figure := range cells {
-		if figure == nil || figurePos == pos {
-			continue
-		}
-		canMove, _ := figure.canMove(figurePos, pos)
-		if canMove {
-			return true
-		}
-	}
-	return false
-}
-
-func isFigureInThreatAfterMove(from, to Position) bool {
-	var futureField = make(map[Position]*Figure, len(Field.Cells))
-	for figurePos, figure := range Field.Cells {
-		futureField[figurePos] = figure
-	}
-	futureField[to] = futureField[from]
-	futureField[from] = nil
-	return isFigureInThreatNow(to, futureField)
+	return field
 }

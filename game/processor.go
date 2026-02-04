@@ -4,26 +4,27 @@ import "errors"
 
 type Player struct {
 	IsWhite bool
-}
-
-type Position struct {
-	X int
-	Y int
+	Situation
 }
 
 type Board struct {
 	Cells map[Position]*Figure
 }
 
-var Field Board
-var enPassantWhite *Figure
-var enPassantBlack *Figure
+var (
+	Field          Board
+	PlayerWhite    *Player
+	PlayerBlack    *Player
+	isWhiteMove    = true
+	enPassantWhite *Figure
+	enPassantBlack *Figure
+)
 
 var (
-	InvalidFrom        = errors.New("Invalid from")
-	ToOutOfBounds      = errors.New("To out of bounds")
-	MoveRulesViolation = errors.New("Move rules violation")
-	WrongColor         = errors.New("Wrong color")
+	InvalidFrom        = errors.New("invalid from")
+	ToOutOfBounds      = errors.New("to out of bounds")
+	MoveRulesViolation = errors.New("move rules violation")
+	WrongColor         = errors.New("wrong color")
 )
 
 func CreateField() {
@@ -31,24 +32,38 @@ func CreateField() {
 	for x := 1; x <= 8; x++ {
 		for y := 1; y <= 8; y++ {
 			if y == 1 || y == 2 || y == 7 || y == 8 {
-				createFigure(x, y, y == 1 || y == 2)
+				Field.Cells[Position{X: x, Y: y}] = createFigure(x, y, y == 1 || y == 2)
 			} else {
-				createEmptyCell(x, y)
+				Field.Cells[Position{X: x, Y: y}] = createEmptyCell()
 			}
 		}
 	}
 }
 
-func Move(from, to Position, player *Player) error {
+func NextMove(from, to Position) (Situation, error) {
+	var player *Player
+	if isWhiteMove {
+		player = PlayerWhite
+	} else {
+		player = PlayerBlack
+	}
+	situation, err := move(from, to, player)
+	if err == nil {
+		isWhiteMove = !isWhiteMove
+	}
+	return situation, err
+}
+
+func move(from, to Position, player *Player) (Situation, error) {
 	figure := Field.Cells[from]
 	if figure == nil {
-		return InvalidFrom
+		return Continue, InvalidFrom
 	}
 	if player.IsWhite != figure.IsWhite {
-		return WrongColor
+		return Continue, WrongColor
 	}
 	if to.X > 8 || to.X < 1 || to.Y > 8 || to.Y < 1 {
-		return ToOutOfBounds
+		return Continue, ToOutOfBounds
 	}
 	if player.IsWhite && enPassantWhite != nil {
 		enPassantWhite.IsVulnerableForEnPassant = false
@@ -58,15 +73,30 @@ func Move(from, to Position, player *Player) error {
 		enPassantBlack.IsVulnerableForEnPassant = false
 		enPassantBlack = nil
 	}
-	canMove, specialMove := figure.canMove(from, to)
+	canMove, moveDetails := figure.canMove(Field, from, to, player.Situation)
 	if !canMove {
-		return MoveRulesViolation
+		return Continue, MoveRulesViolation
 	}
-	figure.move(from, to, specialMove)
-	return nil
+	if moveDetails == ReadyForEnPassant {
+		figure.IsVulnerableForEnPassant = true
+		if isWhiteMove {
+			enPassantWhite = figure
+		} else {
+			enPassantBlack = figure
+		}
+	}
+	Field = figure.move(Field, from, to, moveDetails)
+	figure.HasMoved = true
+	situation := analyzeSituation(Field, player.IsWhite, player.Situation)
+	if player.IsWhite {
+		PlayerBlack.Situation = situation
+	} else {
+		PlayerWhite.Situation = situation
+	}
+	return situation, nil
 }
 
-func createFigure(x, y int, isWhite bool) {
+func createFigure(x, y int, isWhite bool) *Figure {
 	f := &Figure{IsWhite: isWhite}
 	pawn := Pawn{}
 	rook := Rook{}
@@ -76,41 +106,25 @@ func createFigure(x, y int, isWhite bool) {
 	king := King{}
 	if y == 2 || y == 7 {
 		f.Mover = pawn
-		Field.Cells[Position{x, y}] = f
-		return
 	}
-
 	if (x == 1 || x == 8) && (y == 1 || y == 8) {
 		f.Mover = rook
-		Field.Cells[Position{x, y}] = f
-		return
 	}
-
 	if (x == 2 || x == 7) && (y == 1 || y == 8) {
 		f.Mover = knight
-		Field.Cells[Position{x, y}] = f
-		return
 	}
-
 	if (x == 3 || x == 6) && (y == 1 || y == 8) {
 		f.Mover = bishop
-		Field.Cells[Position{x, y}] = f
-		return
 	}
-
 	if x == 4 && (y == 1 || y == 8) {
 		f.Mover = queen
-		Field.Cells[Position{x, y}] = f
-		return
 	}
-
 	if x == 5 && (y == 1 || y == 8) {
 		f.Mover = king
-		Field.Cells[Position{x, y}] = f
-		return
 	}
+	return f
 }
 
-func createEmptyCell(x, y int) {
-	Field.Cells[Position{x, y}] = nil
+func createEmptyCell() *Figure {
+	return nil
 }
