@@ -6,11 +6,10 @@ import (
 )
 
 func StartGame() {
-	game.PlayerWhite = &game.Player{IsWhite: true, Situation: game.Continue}
-	game.PlayerBlack = &game.Player{IsWhite: false, Situation: game.Continue}
+	g := game.StartGame()
 	var move string
 	for {
-		drawBoard(game.Field)
+		drawBoard(g.Field)
 		fmt.Print("Enter your move: ")
 		fmt.Scan(&move)
 
@@ -24,7 +23,7 @@ func StartGame() {
 		toY := runes[2] - 96
 		toX := runes[3] - 48
 
-		situation, moveErr := game.NextMove(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)})
+		situation, moveErr := g.NextMove(game.Position{X: int(fromX), Y: int(fromY)}, game.Position{X: int(toX), Y: int(toY)})
 		if moveErr != nil {
 			fmt.Print("\033[31m", moveErr, "\033[0m\n")
 			continue

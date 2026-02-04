@@ -2,11 +2,9 @@ package main
 
 import (
 	"lets-go-chess/cli"
-	"lets-go-chess/game"
 )
 
 func main() {
-	game.CreateField()
 	chooseMode(0)
 }
 
