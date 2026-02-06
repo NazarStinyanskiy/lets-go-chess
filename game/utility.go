@@ -91,7 +91,7 @@ func isCheckmate(field Board, playerIsWhite bool, enemyKingPos Position, situati
 			}
 		}
 	}
-	return false
+	return true
 }
 
 func isStalemate(field Board, playerIsWhite bool, situation Situation) bool {
