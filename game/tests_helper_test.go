@@ -16,26 +16,28 @@ type OneMoveTestCase struct {
 }
 
 func test(tests []OneMoveTestCase, t *testing.T) {
-	for _, test := range tests {
-		fmt.Println("______________________________")
-		t.Log("Starting test case")
-		DrawConsoleBoard(test.g.Field)
-		fmt.Println()
-		situation, err := test.g.NextMove(test.from, test.to)
-		DrawConsoleBoard(test.g.Field)
-		isExpected, wrongPos, wrongFigure := isAllFiguresExpected(test.g.Field, test.eField)
-		if isExpected && situation == test.eSituation && errors.Is(err, test.eError) {
-			t.Log("Test case successfully finished")
+	for id, test := range tests {
+		t.Run(fmt.Sprintf("OneMoveTestCase_%d", id), func(t *testing.T) {
 			fmt.Println("______________________________")
-			continue
-		}
-		if wrongFigure != nil {
-			t.Errorf("NextMove(%v, %v) wrong figure in wrong place: %v, %v\n)", test.from, test.to, wrongPos, wrongFigure)
-		} else {
-			t.Errorf("NextMove(%v, %v) expected situation: %v, error: %v, got situation: %v, error: %v\n",
-				test.from, test.to, test.eSituation, test.eError, situation, err)
-		}
-		fmt.Println()
+			t.Log("Starting test case")
+			DrawConsoleBoard(test.g.Field)
+			fmt.Println()
+			situation, err := test.g.NextMove(test.from, test.to)
+			DrawConsoleBoard(test.g.Field)
+			isExpected, wrongPos, wrongFigure := isAllFiguresExpected(test.g.Field, test.eField)
+			if isExpected && situation == test.eSituation && errors.Is(err, test.eError) {
+				t.Log("Test case successfully finished")
+				fmt.Println("______________________________")
+				return
+			}
+			if wrongFigure != nil {
+				t.Errorf("NextMove(%v, %v) wrong figure in wrong place: %v, %v\n)", test.from, test.to, wrongPos, wrongFigure)
+			} else {
+				t.Errorf("NextMove(%v, %v) expected situation: %v, error: %v, got situation: %v, error: %v\n",
+					test.from, test.to, test.eSituation, test.eError, situation, err)
+			}
+			fmt.Println()
+		})
 	}
 }
 
@@ -49,8 +51,8 @@ func isAllFiguresExpected(actual, expected Board) (bool, Position, *Figure) {
 }
 
 func isFiguresEqual(actual, expected *Figure) bool {
-	if actual == nil && expected == nil {
-		return true
+	if actual == nil || expected == nil {
+		return actual == expected
 	}
 	return actual.IsWhite == expected.IsWhite &&
 		actual.HasMoved == expected.HasMoved &&

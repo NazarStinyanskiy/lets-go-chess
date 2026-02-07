@@ -50,13 +50,22 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
+	isRookAndDidNotMove := func(pos Position) bool {
+		f := field.Cells[pos]
+		if f != nil {
+			if _, isRook := f.Mover.(Rook); isRook && !f.HasMoved {
+				return true
+			}
+		}
+		return false
+	}
 	if deltaX <= 1 && deltaX >= -1 && deltaY <= 1 && deltaY >= -1 {
 		if (isFightingEnemy(field, from, to) || isCellEmpty(field, to)) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
 			return true, None
 		}
 	}
 	if figure.IsWhite {
-		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 8, Y: 1}].HasMoved {
+		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 8, Y: 1}) {
 			if field.Cells[Position{X: 6, Y: 1}] == nil && field.Cells[Position{X: 7, Y: 1}] == nil {
 				prevPos := Position{X: to.X - 1, Y: to.Y}
 				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
@@ -64,7 +73,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 				}
 			}
 		}
-		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 1, Y: 1}].HasMoved {
+		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 1, Y: 1}) {
 			if field.Cells[Position{X: 4, Y: 1}] == nil && field.Cells[Position{X: 3, Y: 1}] == nil && field.Cells[Position{X: 2, Y: 1}] == nil {
 				prevPos := Position{X: to.X + 1, Y: to.Y}
 				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
@@ -73,7 +82,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 			}
 		}
 	} else {
-		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 8, Y: 8}].HasMoved {
+		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 8, Y: 8}) {
 			if field.Cells[Position{X: 6, Y: 8}] == nil && field.Cells[Position{X: 7, Y: 8}] == nil {
 				prevPos := Position{X: to.X - 1, Y: to.Y}
 				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
@@ -81,7 +90,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 				}
 			}
 		}
-		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && !field.Cells[Position{X: 1, Y: 8}].HasMoved {
+		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 1, Y: 8}) {
 			if field.Cells[Position{X: 4, Y: 8}] == nil && field.Cells[Position{X: 3, Y: 8}] == nil && field.Cells[Position{X: 2, Y: 8}] == nil {
 				prevPos := Position{X: to.X + 1, Y: to.Y}
 				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
