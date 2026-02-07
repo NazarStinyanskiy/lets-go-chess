@@ -129,3 +129,34 @@ func TestNextMoveCheckmateKing(t *testing.T) {
 	}
 	test(tests, t)
 }
+
+func TestNextMoveStalemateKing(t *testing.T) {
+	g := StartGame()
+	g.isWhiteMove = false
+	g.Field = createCustomField(map[Position]*Figure{
+		Position{1, 1}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
+		Position{4, 4}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
+		Position{4, 5}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
+		Position{1, 3}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
+		Position{1, 8}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Rook{}},
+	})
+	eStalemateField := createCustomField(map[Position]*Figure{
+		Position{1, 1}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
+		Position{4, 4}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
+		Position{4, 5}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
+		Position{1, 3}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
+		Position{2, 8}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Rook{}},
+	})
+
+	tests := []OneMoveTestCase{
+		{
+			from:       Position{1, 8},
+			to:         Position{2, 8},
+			g:          g,
+			eField:     eStalemateField,
+			eSituation: Stalemate,
+			eError:     nil,
+		},
+	}
+	test(tests, t)
+}
