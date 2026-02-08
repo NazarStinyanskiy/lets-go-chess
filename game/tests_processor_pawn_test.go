@@ -10,7 +10,7 @@ func TestNextMoveSimpleMovePawn(t *testing.T) {
 		g := StartGame()
 		tests = append(tests, OneMoveTestCase{from: Position{x, 2}, to: Position{x, 3}, g: g, eField: *pawnMovedField(g, Position{x, 2}, Position{x, 3}), eSituation: Continue, eError: nil})
 		g2 := StartGame()
-		g2.isWhiteMove = false
+		g2.IsWhiteMove = false
 		tests = append(tests, OneMoveTestCase{from: Position{x, 7}, to: Position{x, 6}, g: g2, eField: *pawnMovedField(g2, Position{x, 7}, Position{x, 6}), eSituation: Continue, eError: nil})
 	}
 	test(tests, t)
@@ -22,7 +22,7 @@ func TestNextMoveLongMovePawn(t *testing.T) {
 		g := StartGame()
 		tests = append(tests, OneMoveTestCase{from: Position{x, 2}, to: Position{x, 4}, g: g, eField: *pawnMovedField(g, Position{x, 2}, Position{x, 4}), eSituation: Continue, eError: nil})
 		g2 := StartGame()
-		g2.isWhiteMove = false
+		g2.IsWhiteMove = false
 		tests = append(tests, OneMoveTestCase{from: Position{x, 7}, to: Position{x, 5}, g: g2, eField: *pawnMovedField(g2, Position{x, 7}, Position{x, 5}), eSituation: Continue, eError: nil})
 	}
 	test(tests, t)
@@ -38,7 +38,7 @@ func TestNextMoveBeatPawn(t *testing.T) {
 		Position{6, 5}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
 	})
 	g2 := StartGame()
-	g2.isWhiteMove = false
+	g2.IsWhiteMove = false
 	g2.Field = createCustomField(map[Position]*Figure{
 		Position{1, 1}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
 		Position{8, 8}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},

@@ -6,7 +6,7 @@ type Game struct {
 	Field          Board
 	PlayerWhite    *Player
 	PlayerBlack    *Player
-	isWhiteMove    bool
+	IsWhiteMove    bool
 	enPassantWhite *Figure
 	enPassantBlack *Figure
 }
@@ -32,20 +32,20 @@ func StartGame() *Game {
 		Field:       createField(),
 		PlayerWhite: &Player{IsWhite: true, Situation: Continue},
 		PlayerBlack: &Player{IsWhite: false, Situation: Continue},
-		isWhiteMove: true,
+		IsWhiteMove: true,
 	}
 }
 
 func (g *Game) NextMove(from, to Position) (Situation, error) {
 	var player *Player
-	if g.isWhiteMove {
+	if g.IsWhiteMove {
 		player = g.PlayerWhite
 	} else {
 		player = g.PlayerBlack
 	}
 	situation, err := g.move(from, to, player)
 	if err == nil {
-		g.isWhiteMove = !g.isWhiteMove
+		g.IsWhiteMove = !g.IsWhiteMove
 	}
 	return situation, err
 }
@@ -75,7 +75,7 @@ func (g *Game) move(from, to Position, player *Player) (Situation, error) {
 	}
 	if moveDetails == ReadyForEnPassant {
 		figure.IsVulnerableForEnPassant = true
-		if g.isWhiteMove {
+		if g.IsWhiteMove {
 			g.enPassantWhite = figure
 		} else {
 			g.enPassantBlack = figure

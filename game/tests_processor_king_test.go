@@ -52,7 +52,7 @@ func TestNextMoveSimpleKing(t *testing.T) {
 
 func TestNextMoveCheckKing(t *testing.T) {
 	g := StartGame()
-	g.isWhiteMove = false
+	g.IsWhiteMove = false
 	g.Field = createCustomField(map[Position]*Figure{
 		Position{2, 2}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
 		Position{8, 8}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
@@ -103,7 +103,7 @@ func TestNextMoveImpossibleMoveKing(t *testing.T) {
 
 func TestNextMoveCheckmateKing(t *testing.T) {
 	g := StartGame()
-	g.isWhiteMove = false
+	g.IsWhiteMove = false
 	g.Field = createCustomField(map[Position]*Figure{
 		Position{2, 1}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
 		Position{3, 3}: {IsWhite: false, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
@@ -132,7 +132,7 @@ func TestNextMoveCheckmateKing(t *testing.T) {
 
 func TestNextMoveStalemateKing(t *testing.T) {
 	g := StartGame()
-	g.isWhiteMove = false
+	g.IsWhiteMove = false
 	g.Field = createCustomField(map[Position]*Figure{
 		Position{1, 1}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: King{}},
 		Position{4, 4}: {IsWhite: true, HasMoved: true, IsVulnerableForEnPassant: false, Mover: Pawn{}},
