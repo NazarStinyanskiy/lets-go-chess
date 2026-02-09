@@ -44,9 +44,9 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 	figure := field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := k.move(field, from, to, move)
-			kingPos := findKing(field, figure.IsWhite)
+			kingPos := findKing(board, figure.IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
@@ -60,7 +60,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 		return false
 	}
 	if deltaX <= 1 && deltaX >= -1 && deltaY <= 1 && deltaY >= -1 {
-		if (isFightingEnemy(field, from, to) || isCellEmpty(field, to)) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
+		if isFightingEnemy(field, from, to) || isCellEmpty(field, to) {
 			return true, None
 		}
 	}
@@ -68,7 +68,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 8, Y: 1}) {
 			if field.Cells[Position{X: 6, Y: 1}] == nil && field.Cells[Position{X: 7, Y: 1}] == nil {
 				prevPos := Position{X: to.X - 1, Y: to.Y}
-				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) {
 					return true, ShortCastling
 				}
 			}
@@ -76,7 +76,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 1, Y: 1}) {
 			if field.Cells[Position{X: 4, Y: 1}] == nil && field.Cells[Position{X: 3, Y: 1}] == nil && field.Cells[Position{X: 2, Y: 1}] == nil {
 				prevPos := Position{X: to.X + 1, Y: to.Y}
-				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) {
 					return true, LongCastling
 				}
 			}
@@ -85,7 +85,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 		if deltaX == 2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 8, Y: 8}) {
 			if field.Cells[Position{X: 6, Y: 8}] == nil && field.Cells[Position{X: 7, Y: 8}] == nil {
 				prevPos := Position{X: to.X - 1, Y: to.Y}
-				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) {
 					return true, ShortCastling
 				}
 			}
@@ -93,7 +93,7 @@ func (k King) canMove(field Board, from, to Position, situation Situation) (ok b
 		if deltaX == -2 && deltaY == 0 && !figure.HasMoved && isRookAndDidNotMove(Position{X: 1, Y: 8}) {
 			if field.Cells[Position{X: 4, Y: 8}] == nil && field.Cells[Position{X: 3, Y: 8}] == nil && field.Cells[Position{X: 2, Y: 8}] == nil {
 				prevPos := Position{X: to.X + 1, Y: to.Y}
-				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) && !isFigureInThreat(k.move(field, from, to, move), to, situation) {
+				if !isFigureInThreat(k.move(field, from, prevPos, move), prevPos, situation) {
 					return true, LongCastling
 				}
 			}
@@ -134,9 +134,9 @@ type Queen struct {
 
 func (q Queen) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := q.move(field, from, to, move)
-			kingPos := findKing(field, field.Cells[from].IsWhite)
+			kingPos := findKing(board, field.Cells[from].IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
@@ -156,9 +156,9 @@ type Rook struct{}
 func (r Rook) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := r.move(field, from, to, move)
-			kingPos := findKing(field, field.Cells[from].IsWhite)
+			kingPos := findKing(board, field.Cells[from].IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
@@ -203,9 +203,9 @@ type Bishop struct{}
 func (b Bishop) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := b.move(field, from, to, move)
-			kingPos := findKing(field, field.Cells[from].IsWhite)
+			kingPos := findKing(board, field.Cells[from].IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
@@ -248,9 +248,9 @@ type Knight struct{}
 func (k Knight) canMove(field Board, from, to Position, situation Situation) (ok bool, move MoveDetails) {
 	deltaX, deltaY := getDelta(from, to)
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := k.move(field, from, to, move)
-			kingPos := findKing(field, field.Cells[from].IsWhite)
+			kingPos := findKing(board, field.Cells[from].IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
@@ -277,9 +277,9 @@ func (p Pawn) canMove(field Board, from, to Position, situation Situation) (ok b
 	figure := field.Cells[from]
 	deltaX, deltaY := getDelta(from, to)
 	defer func() {
-		if ok && situation == Check {
+		if ok {
 			board := p.move(field, from, to, move)
-			kingPos := findKing(field, figure.IsWhite)
+			kingPos := findKing(board, figure.IsWhite)
 			ok = !isFigureInThreat(board, kingPos, situation)
 		}
 	}()
