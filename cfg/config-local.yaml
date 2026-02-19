@@ -1,0 +1,8 @@
+server:
+  port: 8080
+  writeTimeout: 10s
+  readTimeout: 5s
+  idleTimeout: 30s
+
+cors:
+  frontend: http://localhost:5500

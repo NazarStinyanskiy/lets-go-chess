@@ -8,7 +8,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
+
+	"github.com/spf13/viper"
 )
 
 type gameResponse struct {
@@ -33,10 +34,10 @@ func StartServer() {
 	mux.HandleFunc("OPTIONS /move", corsMiddleware(nil))
 
 	server := http.Server{
-		Addr:         ":8080",
-		WriteTimeout: 10 * time.Second,
-		ReadTimeout:  5 * time.Second,
-		IdleTimeout:  30 * time.Second,
+		Addr:         ":" + viper.GetString("server.port"),
+		WriteTimeout: viper.GetDuration("server.writeTimeout"),
+		ReadTimeout:  viper.GetDuration("server.readTimeout"),
+		IdleTimeout:  viper.GetDuration("server.idleTimeout"),
 		Handler:      mux,
 	}
 	err := server.ListenAndServe()
@@ -47,7 +48,7 @@ func StartServer() {
 
 func corsMiddleware(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5500")
+		w.Header().Set("Access-Control-Allow-Origin", viper.GetString("cors.frontend"))
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if handler != nil {
@@ -56,7 +57,7 @@ func corsMiddleware(handler func(w http.ResponseWriter, r *http.Request)) func(w
 	}
 }
 
-func startGame(w http.ResponseWriter, r *http.Request) {
+func startGame(w http.ResponseWriter, _ *http.Request) {
 	g := game.StartGame()
 	gameId := storage.SetGame(g)
 	resp := &gameResponse{}
